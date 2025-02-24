@@ -24,19 +24,19 @@ import re
 
 
 
-# Initialize colorama
+
 
 init(autoreset=True)
 
 
 
-# Suppress Wappalyzer warnings
+
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
 
 
-# Thread-safe data structures
+
 
 subdomains_lock = threading.Lock()
 
@@ -78,7 +78,7 @@ def validate_domain(domain):
 
     """Validate the domain name."""
 
-    # Regex to match a valid domain name (including optional http:// or https://)
+   
 
     domain_regex = re.compile(
 
@@ -94,7 +94,7 @@ def validate_wordlist_file(file_path):
 
     """Validate the wordlist file."""
 
-    if not file_path:  # If no file is provided, use the default wordlist
+    if not file_path:  
 
         return True
 
@@ -126,7 +126,7 @@ def find_subdomains(domain, wordlist=None):
 
         try:
 
-            # Step 1: Check DNS resolution
+       
 
             try:
 
@@ -134,19 +134,19 @@ def find_subdomains(domain, wordlist=None):
 
             except dns.resolver.NXDOMAIN:
 
-                return  # Skip subdomains that don't exist
+                return  
 
             except dns.resolver.NoAnswer:
 
-                return  # Skip subdomains without DNS records
+                return  
 
             except dns.resolver.Timeout:
 
-                return  # Skip subdomains that time out
+                return  
 
 
 
-            # Step 2: Check HTTPS first, then HTTP if HTTPS fails
+           
 
             headers = {
 
@@ -156,7 +156,7 @@ def find_subdomains(domain, wordlist=None):
 
             try:
 
-                # Try HTTPS first
+               
 
                 url = f"https://{full_domain}"
 
@@ -170,7 +170,7 @@ def find_subdomains(domain, wordlist=None):
 
             except requests.exceptions.SSLError:
 
-                # If HTTPS fails, try HTTP
+               
 
                 try:
 
@@ -186,11 +186,11 @@ def find_subdomains(domain, wordlist=None):
 
                 except requests.exceptions.RequestException:
 
-                    pass  # Skip subdomains that don't respond to HTTP requests
+                    pass 
 
             except requests.exceptions.RequestException:
 
-                pass  # Skip subdomains that don't respond to HTTPS requests
+                pass  
 
         except Exception as e:
 
@@ -198,7 +198,7 @@ def find_subdomains(domain, wordlist=None):
 
 
 
-    # Use ThreadPoolExecutor for multi-threading
+   
 
     with ThreadPoolExecutor(max_workers=10) as executor:
 
@@ -206,8 +206,7 @@ def find_subdomains(domain, wordlist=None):
 
         for future in as_completed(futures):
 
-            future.result()  # Wait for threads to complete
-
+            future.result() 
 
 
     return list(subdomains)
@@ -228,7 +227,7 @@ def detect_technologies(url):
 
 
 
-        # Map categories to human-readable names
+        
 
         category_map = {
 
@@ -256,13 +255,12 @@ def detect_technologies(url):
 
 
 
-        # Group technologies by category
-
+       
         categorized_technologies = {}
 
         for tech, details in technologies.items():
 
-            # Extract categories and versions
+           
 
             categories = details.get("categories", [])
 
@@ -272,7 +270,7 @@ def detect_technologies(url):
 
 
 
-            # Map categories to human-readable names
+           
 
             for cat in categories:
 
@@ -312,7 +310,7 @@ def check_files(url):
 
         try:
 
-            # Try HTTPS first
+           
 
             full_url = f"{url}/{file}"
 
@@ -332,7 +330,7 @@ def check_files(url):
 
         except requests.exceptions.SSLError:
 
-            # If HTTPS fails, try HTTP
+           
 
             try:
 
@@ -404,7 +402,7 @@ def bruteforce_directories(url, wordlist=None):
 
 
 
-    # Track discovered directories 
+    
 
     discovered_dirs = [] 
 
@@ -416,7 +414,7 @@ def bruteforce_directories(url, wordlist=None):
 
         try: 
 
-            # Try HTTPS first 
+           
 
             response = requests.get(full_url, headers=headers, timeout=5) 
 
@@ -430,7 +428,7 @@ def bruteforce_directories(url, wordlist=None):
 
         except requests.exceptions.SSLError: 
 
-            # If HTTPS fails, try HTTP 
+          
 
             try: 
 
@@ -448,28 +446,26 @@ def bruteforce_directories(url, wordlist=None):
 
             except requests.exceptions.RequestException: 
 
-                pass  # Skip errors and continue with the next directory 
+                pass  
 
         except requests.exceptions.RequestException: 
 
-            pass  # Skip errors and continue with the next directory 
+            pass   
 
 
 
-    # Use ThreadPoolExecutor for multi-threading 
-
+   
     with ThreadPoolExecutor(max_workers=20) as executor: 
 
         futures = [executor.submit(check_directory, directory) for directory in wordlist] 
 
         for future in as_completed(futures): 
 
-            future.result()  # Wait for threads to complete 
+            future.result()  
 
 
 
-    # Print summary of discovered directories 
-
+  
     if discovered_dirs: 
 
         print(f"\n{Fore.GREEN}[+] Discovered Directories:{Style.RESET_ALL}") 
@@ -502,7 +498,7 @@ def save_results(results, filename="results.txt"):
 
     with open(filename, "w") as f:
 
-        # Write domain information
+       
 
         f.write(f"Domain: {results.get('domain', 'N/A')}\n")
 
@@ -510,7 +506,7 @@ def save_results(results, filename="results.txt"):
 
 
 
-        # Write subdomains
+       
 
         f.write("Subdomains:\n")
 
@@ -530,7 +526,6 @@ def save_results(results, filename="results.txt"):
 
 
 
-        # Write technologies
 
         f.write("Technologies:\n")
 
@@ -544,7 +539,7 @@ def save_results(results, filename="results.txt"):
 
                 for tech in tech_list:
 
-                    f.write(f"  - {strip_ansi_codes(tech)}\n")  # Strip ANSI codes
+                    f.write(f"  - {strip_ansi_codes(tech)}\n") 
 
         else:
 
@@ -554,7 +549,6 @@ def save_results(results, filename="results.txt"):
 
 
 
-        # Write files
 
         f.write("Files:\n")
 
@@ -564,7 +558,7 @@ def save_results(results, filename="results.txt"):
 
             for file, status in files.items():
 
-                f.write(f"  - {file}: {strip_ansi_codes(status)}\n")  # Strip ANSI codes
+                f.write(f"  - {file}: {strip_ansi_codes(status)}\n")  
 
         else:
 
@@ -574,13 +568,12 @@ def save_results(results, filename="results.txt"):
 
 
 
-        # Write WAF
 
         f.write("WAF:\n")
 
         waf = results.get("waf", "N/A")
 
-        f.write(f"  - {strip_ansi_codes(waf)}\n")  # Strip ANSI codes
+        f.write(f"  - {strip_ansi_codes(waf)}\n") 
 
         f.write("\n")
 
@@ -596,7 +589,7 @@ def main():
 
 
 
-    # Take user input for the domain
+   
 
     while True:
 
@@ -612,7 +605,7 @@ def main():
 
 
 
-    # Take user input for the wordlist file (for subdomains)
+   
 
     while True:
 
@@ -628,7 +621,7 @@ def main():
 
 
 
-    # Load the wordlist if provided
+  
 
     wordlist = None
 
@@ -652,7 +645,7 @@ def main():
 
 
 
-    # Take user input for the directory bruteforcing wordlist
+   
 
     while True:
 
@@ -668,7 +661,7 @@ def main():
 
 
 
-    # Load the directory bruteforcing wordlist if provided
+   
 
     dir_wordlist = None
 
@@ -692,11 +685,11 @@ def main():
 
 
 
-    # Ensure the domain starts with 'http://' or 'https://'
+   
 
     if not domain.startswith(('http://', 'https://')):
 
-        url = f"https://{domain}"  # Default to HTTPS if no protocol is specified
+        url = f"https://{domain}" 
 
     else:
 
@@ -766,7 +759,7 @@ def main():
 
 
 
-    # Ask the user if they want to save the results
+  
 
     while True:
 
@@ -788,11 +781,11 @@ def main():
 
         if not filename:
 
-            filename = "results.txt"  # Default file name
+            filename = "results.txt"  
 
 
 
-        # Save results to the specified file
+      
 
         results = {
 
