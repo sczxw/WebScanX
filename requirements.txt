@@ -1,0 +1,6 @@
+requests
+dnspython
+Wappalyzer
+wafw00f
+colorama
+         
