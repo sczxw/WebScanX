@@ -1,3 +1,29 @@
+"""
+
+webscanx - A comprehensive web scanning tool.
+
+
+
+This tool helps users to scan for subdomains, technologies, files, WAFs, and directories in websites.
+
+It utilizes various scanning techniques to gather critical information for security analysis.
+
+
+
+Author: sczxw
+
+"""
+
+
+
+__version__ = "0.1.0"  # Define the version of your package here
+
+
+
+
+
+
+
 #!/usr/bin/env python3
 
 
@@ -10,7 +36,7 @@ from wafw00f.main import WAFW00F
 
 from colorama import Fore, Style, init
 
-from Wappalyzer import Wappalyzer, WebPage
+import builtwith
 
 import warnings
 
@@ -24,19 +50,19 @@ import re
 
 
 
-
+# Initialize colorama
 
 init(autoreset=True)
 
 
 
-
+# Suppress warnings (e.g., from builtwith)
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
 
 
-
+# Thread-safe data structures
 
 subdomains_lock = threading.Lock()
 
@@ -78,7 +104,7 @@ def validate_domain(domain):
 
     """Validate the domain name."""
 
-   
+    # Regex to match a valid domain name (including optional http:// or https://)
 
     domain_regex = re.compile(
 
@@ -94,7 +120,7 @@ def validate_wordlist_file(file_path):
 
     """Validate the wordlist file."""
 
-    if not file_path:  
+    if not file_path:  # If no file is provided, use the default wordlist
 
         return True
 
@@ -126,7 +152,7 @@ def find_subdomains(domain, wordlist=None):
 
         try:
 
-       
+            # Step 1: Check DNS resolution
 
             try:
 
@@ -134,19 +160,19 @@ def find_subdomains(domain, wordlist=None):
 
             except dns.resolver.NXDOMAIN:
 
-                return  
+                return  # Skip subdomains that don't exist
 
             except dns.resolver.NoAnswer:
 
-                return  
+                return  # Skip subdomains without DNS records
 
             except dns.resolver.Timeout:
 
-                return  
+                return  # Skip subdomains that time out
 
 
 
-           
+            # Step 2: Check HTTPS first, then HTTP if HTTPS fails
 
             headers = {
 
@@ -156,7 +182,7 @@ def find_subdomains(domain, wordlist=None):
 
             try:
 
-               
+                # Try HTTPS first
 
                 url = f"https://{full_domain}"
 
@@ -170,7 +196,7 @@ def find_subdomains(domain, wordlist=None):
 
             except requests.exceptions.SSLError:
 
-               
+                # If HTTPS fails, try HTTP
 
                 try:
 
@@ -186,11 +212,11 @@ def find_subdomains(domain, wordlist=None):
 
                 except requests.exceptions.RequestException:
 
-                    pass 
+                    pass  # Skip subdomains that don't respond to HTTP requests
 
             except requests.exceptions.RequestException:
 
-                pass  
+                pass  # Skip subdomains that don't respond to HTTPS requests
 
         except Exception as e:
 
@@ -198,7 +224,7 @@ def find_subdomains(domain, wordlist=None):
 
 
 
-   
+    # Use ThreadPoolExecutor for multi-threading
 
     with ThreadPoolExecutor(max_workers=10) as executor:
 
@@ -206,7 +232,8 @@ def find_subdomains(domain, wordlist=None):
 
         for future in as_completed(futures):
 
-            future.result() 
+            future.result()  # Wait for threads to complete
+
 
 
     return list(subdomains)
@@ -215,19 +242,13 @@ def find_subdomains(domain, wordlist=None):
 
 def detect_technologies(url):
 
-    """Detect all technologies and group them by category."""
+    """Detect all technologies and group them by category using builtwith."""
 
     try:
 
-        wappalyzer = Wappalyzer.latest()
+        techs = builtwith.builtwith(url)
 
-        webpage = WebPage.new_from_url(url)
-
-        technologies = wappalyzer.analyze_with_versions_and_categories(webpage)
-
-
-
-        
+        # Map categories to human-readable names
 
         category_map = {
 
@@ -253,36 +274,13 @@ def detect_technologies(url):
 
         }
 
-
-
-       
         categorized_technologies = {}
 
-        for tech, details in technologies.items():
+        for category, tech_list in techs.items():
 
-           
+            readable_cat = category_map.get(category, category)
 
-            categories = details.get("categories", [])
-
-            versions = details.get("versions", [])
-
-            version = ", ".join(versions) if versions else "Couldn't detect"
-
-
-
-           
-
-            for cat in categories:
-
-                readable_cat = category_map.get(cat, cat)
-
-                if readable_cat not in categorized_technologies:
-
-                    categorized_technologies[readable_cat] = []
-
-                categorized_technologies[readable_cat].append(f"{tech} (Version: {version})")
-
-
+            categorized_technologies[readable_cat] = tech_list
 
         return categorized_technologies
 
@@ -310,7 +308,7 @@ def check_files(url):
 
         try:
 
-           
+            # Try HTTPS first
 
             full_url = f"{url}/{file}"
 
@@ -330,7 +328,7 @@ def check_files(url):
 
         except requests.exceptions.SSLError:
 
-           
+            # If HTTPS fails, try HTTP
 
             try:
 
@@ -378,7 +376,9 @@ def detect_waf(url):
 
         return "No WAF detected"
 
-def bruteforce_directories(url, wordlist=None): 
+
+
+def bruteforce_directories(url, wordlist=None):
 
     """ 
 
@@ -386,99 +386,99 @@ def bruteforce_directories(url, wordlist=None):
 
     Only directories with a status code of 200 (Found) are displayed. 
 
-    """ 
+    """
 
-    if wordlist is None: 
+    if wordlist is None:
 
-        wordlist = ["admin", "login", "wp-admin", "dashboard", "test", "api", "backup", "config", "assets", "images"] 
-
-
-
-    headers = { 
-
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" 
-
-    } 
+        wordlist = ["admin", "login", "wp-admin", "dashboard", "test", "api", "backup", "config", "assets", "images"]
 
 
 
-    
+    headers = {
 
-    discovered_dirs = [] 
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
 
-
-
-    def check_directory(directory): 
-
-        full_url = f"{url}/{directory}" 
-
-        try: 
-
-           
-
-            response = requests.get(full_url, headers=headers, timeout=5) 
-
-            if response.status_code == 200: 
-
-                with directories_lock: 
-
-                    discovered_dirs.append(full_url) 
-
-                    print(f"{Fore.GREEN}  - {full_url}: Found{Style.RESET_ALL}") 
-
-        except requests.exceptions.SSLError: 
-
-          
-
-            try: 
-
-                full_url = f"{url.replace('https://', 'http://')}/{directory}" 
-
-                response = requests.get(full_url, headers=headers, timeout=5) 
-
-                if response.status_code == 200: 
-
-                    with directories_lock: 
-
-                        discovered_dirs.append(full_url) 
-
-                        print(f"{Fore.GREEN}  - {full_url}: Found{Style.RESET_ALL}") 
-
-            except requests.exceptions.RequestException: 
-
-                pass  
-
-        except requests.exceptions.RequestException: 
-
-            pass   
+    }
 
 
 
-   
-    with ThreadPoolExecutor(max_workers=20) as executor: 
+    # Track discovered directories
 
-        futures = [executor.submit(check_directory, directory) for directory in wordlist] 
-
-        for future in as_completed(futures): 
-
-            future.result()  
+    discovered_dirs = []
 
 
 
-  
-    if discovered_dirs: 
+    def check_directory(directory):
 
-        print(f"\n{Fore.GREEN}[+] Discovered Directories:{Style.RESET_ALL}") 
+        full_url = f"{url}/{directory}"
 
-        for dir in discovered_dirs: 
+        try:
 
-            print(f"  - {dir}") 
+            # Try HTTPS first
 
-    else: 
+            response = requests.get(full_url, headers=headers, timeout=5)
+
+            if response.status_code == 200:
+
+                with directories_lock:
+
+                    discovered_dirs.append(full_url)
+
+                    print(f"{Fore.GREEN}  - {full_url}: Found{Style.RESET_ALL}")
+
+        except requests.exceptions.SSLError:
+
+            # If HTTPS fails, try HTTP
+
+            try:
+
+                full_url = f"{url.replace('https://', 'http://')}/{directory}"
+
+                response = requests.get(full_url, headers=headers, timeout=5)
+
+                if response.status_code == 200:
+
+                    with directories_lock:
+
+                        discovered_dirs.append(full_url)
+
+                        print(f"{Fore.GREEN}  - {full_url}: Found{Style.RESET_ALL}")
+
+            except requests.exceptions.RequestException:
+
+                pass  # Skip errors and continue with the next directory
+
+        except requests.exceptions.RequestException:
+
+            pass  # Skip errors and continue with the next directory
+
+
+
+    # Use ThreadPoolExecutor for multi-threading
+
+    with ThreadPoolExecutor(max_workers=20) as executor:
+
+        futures = [executor.submit(check_directory, directory) for directory in wordlist]
+
+        for future in as_completed(futures):
+
+            future.result()  # Wait for threads to complete
+
+
+
+    # Print summary of discovered directories
+
+    if discovered_dirs:
+
+        print(f"\n{Fore.GREEN}[+] Discovered Directories:{Style.RESET_ALL}")
+
+        for dir in discovered_dirs:
+
+            print(f"  - {dir}")
+
+    else:
 
         print(f"\n{Fore.RED}[+] No directories discovered.{Style.RESET_ALL}")
-
-
 
 
 
@@ -498,7 +498,7 @@ def save_results(results, filename="results.txt"):
 
     with open(filename, "w") as f:
 
-       
+        # Write domain information
 
         f.write(f"Domain: {results.get('domain', 'N/A')}\n")
 
@@ -506,7 +506,7 @@ def save_results(results, filename="results.txt"):
 
 
 
-       
+        # Write subdomains
 
         f.write("Subdomains:\n")
 
@@ -526,6 +526,7 @@ def save_results(results, filename="results.txt"):
 
 
 
+        # Write technologies
 
         f.write("Technologies:\n")
 
@@ -539,7 +540,7 @@ def save_results(results, filename="results.txt"):
 
                 for tech in tech_list:
 
-                    f.write(f"  - {strip_ansi_codes(tech)}\n") 
+                    f.write(f"  - {strip_ansi_codes(tech)}\n")  # Strip ANSI codes
 
         else:
 
@@ -549,6 +550,7 @@ def save_results(results, filename="results.txt"):
 
 
 
+        # Write files
 
         f.write("Files:\n")
 
@@ -558,7 +560,7 @@ def save_results(results, filename="results.txt"):
 
             for file, status in files.items():
 
-                f.write(f"  - {file}: {strip_ansi_codes(status)}\n")  
+                f.write(f"  - {file}: {strip_ansi_codes(status)}\n")  # Strip ANSI codes
 
         else:
 
@@ -568,12 +570,13 @@ def save_results(results, filename="results.txt"):
 
 
 
+        # Write WAF
 
         f.write("WAF:\n")
 
         waf = results.get("waf", "N/A")
 
-        f.write(f"  - {strip_ansi_codes(waf)}\n") 
+        f.write(f"  - {strip_ansi_codes(waf)}\n")  # Strip ANSI codes
 
         f.write("\n")
 
@@ -589,7 +592,7 @@ def main():
 
 
 
-   
+    # Take user input for the domain
 
     while True:
 
@@ -605,7 +608,7 @@ def main():
 
 
 
-   
+    # Take user input for the wordlist file (for subdomains)
 
     while True:
 
@@ -621,7 +624,7 @@ def main():
 
 
 
-  
+    # Load the wordlist if provided
 
     wordlist = None
 
@@ -645,7 +648,7 @@ def main():
 
 
 
-   
+    # Take user input for the directory bruteforcing wordlist
 
     while True:
 
@@ -661,7 +664,7 @@ def main():
 
 
 
-   
+    # Load the directory bruteforcing wordlist if provided
 
     dir_wordlist = None
 
@@ -685,11 +688,11 @@ def main():
 
 
 
-   
+    # Ensure the domain starts with 'http://' or 'https://'
 
     if not domain.startswith(('http://', 'https://')):
 
-        url = f"https://{domain}" 
+        url = f"https://{domain}"  # Default to HTTPS if no protocol is specified
 
     else:
 
@@ -759,7 +762,7 @@ def main():
 
 
 
-  
+    # Ask the user if they want to save the results
 
     while True:
 
@@ -781,11 +784,11 @@ def main():
 
         if not filename:
 
-            filename = "results.txt"  
+            filename = "results.txt"  # Default file name
 
 
 
-      
+        # Save results to the specified file
 
         results = {
 
